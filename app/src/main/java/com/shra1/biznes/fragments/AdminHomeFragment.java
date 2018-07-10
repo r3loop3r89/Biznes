@@ -15,7 +15,6 @@ import com.shra1.biznes.R;
 import com.shra1.biznes.activities.AdminActivity;
 import com.shra1.biznes.adapters.rva.MainMenuRVA;
 import com.shra1.biznes.dtos.MainMenuItem;
-import com.shra1.biznes.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,14 +50,15 @@ public class AdminHomeFragment extends Fragment {
             AdminActivity.getInstance().changeFragment(AddUserFragment.getInstance(), false);
         }, 0));
 
+        mainMenuItems.add(new MainMenuItem("Manage Users", 0, menuItem -> {
+            AdminActivity.getInstance().changeFragment(ManageUsersFragment.getInstance(), false);
+        }, 0));
+
         mainMenuItems.add(new MainMenuItem("Settings", 0, menuItem -> {
-            String data = "Hello Manasi";
-            AdminActivity.getInstance().changeFragment(SettingsFragment.getInstance(data), false);
+            AdminActivity.getInstance().changeFragment(SettingsFragment.getInstance(), false);
 
         }, 2));
-        mainMenuItems.add(new MainMenuItem("Other", 0, menuItem -> {
-            Utils.showToast(mCtx, "Clicked Other");
-        }, 0));
+
 
         MainMenuRVA mainMenuRVA = new MainMenuRVA(mCtx, mainMenuItems);
         rvFAHMainMenu.setLayoutManager(new GridLayoutManager(mCtx, 2));

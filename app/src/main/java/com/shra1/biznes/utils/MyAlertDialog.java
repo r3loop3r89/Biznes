@@ -23,4 +23,15 @@ public class MyAlertDialog {
         builder.setPositiveButton(positiveButtonText, positiveButtonClickListener);
         builder.show();
     }
+
+    public static void showErrorDialog(Context mCtx, Exception e, String positiveButtonText, DialogInterface.OnClickListener positiveButtonClickListener) {
+        prepare(mCtx, "Error", e.getMessage());
+        builder.setPositiveButton(positiveButtonText, positiveButtonClickListener);
+        builder.show();
+    }
+
+    public static void showNoInternetErrorDialog(Context mCtx) {
+        prepare(mCtx, "Error", "No internet");
+        builder.show();
+    }
 }

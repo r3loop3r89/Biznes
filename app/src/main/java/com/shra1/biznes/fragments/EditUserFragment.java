@@ -1,6 +1,5 @@
 package com.shra1.biznes.fragments;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -18,8 +17,6 @@ import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 
 import com.google.firebase.storage.FirebaseStorage;
 import com.koushikdutta.async.future.FutureCallback;
@@ -32,6 +29,7 @@ import com.shra1.biznes.utils.MyAlertDialog;
 import com.shra1.biznes.utils.MyProgressDialog;
 import com.shra1.biznes.utils.Utils;
 import com.shra1.biznes.utils.Validation;
+import com.shra1.biznes.webservices.GetUserProfileTask;
 import com.shra1.biznes.webservices.LoginTask;
 import com.shra1.biznes.webservices.RegisterUserTask;
 
@@ -39,32 +37,34 @@ import java.io.File;
 
 import static android.app.Activity.RESULT_OK;
 
-public class AddUserFragment extends Fragment {
+public class EditUserFragment extends Fragment {
     private static final int PICK_IMAGE = 100;
-    private static AddUserFragment INSTANCE = null;
+    private static EditUserFragment INSTANCE = null;
     String LOCAL_FILE_PATH;
     String CONTENT_TYPE;
     String FILE_EXTENTION;
-    private EditText etFAUUsername;
-    private EditText etFAUFirstName;
-    private EditText etFAULastName;
-    private EditText etFAUEmailAddress;
-    private EditText etFAUPassword;
-    private EditText etFAUMobileNumber;
-    private EditText etFAUAddress;
-    private Button bFAUSave;
-    private Button bFAUCancle;
-    private RelativeLayout llFAUSelectPhoto;
-    private ImageView ivFAUPhoto;
+    private EditText etFEUUsername;
+    private EditText etFEUFirstName;
+    private EditText etFEULastName;
+    private EditText etFEUEmailAddress;
+    private EditText etFEUPassword;
+    private EditText etFEUMobileNumber;
+    private EditText etFEUAddress;
+    private Button bFEUUpdate;
+    private Button bFEUDelete;
+    private Button bFEUCancle;
+    //private RelativeLayout llFEUSelectPhoto;
+    private ImageView ivFEUPhoto;
     private Context mCtx;
+    private GetUserProfileTask.ResponseDto selectedUser;
 
-
-    public AddUserFragment() {
+    public EditUserFragment() {
     }
 
-    public static AddUserFragment getInstance() {
+    public static EditUserFragment getInstance(GetUserProfileTask.ResponseDto selectedUser) {
         if (INSTANCE == null) {
-            INSTANCE = new AddUserFragment();
+            INSTANCE = new EditUserFragment();
+            INSTANCE.selectedUser = selectedUser;
         }
         return INSTANCE;
     }
@@ -72,31 +72,52 @@ public class AddUserFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_add_user, container, false);
+        View v = inflater.inflate(R.layout.fragment_edit_user, container, false);
         mCtx = container.getContext();
 
-        AdminActivity.getInstance().setTitle("Add User");
+        AdminActivity.getInstance().setTitle("Edit User");
 
         initViews(v);
 
-        llFAUSelectPhoto.setOnClickListener(ll -> {
-            Intent i = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        /*llFEUSelectPhoto.setOnClickListener(ll -> {
+            Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             i.setType("image/*");
             startActivityForResult(i, PICK_IMAGE);
-        });
+        });*/
 
-        bFAUCancle.setOnClickListener(b -> {
+        etFEUUsername.setText(selectedUser.getData().getUserName());
+        etFEUFirstName.setText(selectedUser.getData().getFirstName());
+        etFEULastName.setText(selectedUser.getData().getLastName());
+        etFEUEmailAddress.setText(selectedUser.getData().getEmailAddress());
+        etFEUMobileNumber.setText(selectedUser.getData().getMobileNumber());
+        etFEUAddress.setText(selectedUser.getData().getAddress());
+        Ion.with(mCtx)
+                .load(selectedUser.getData().getPhotoUrl())
+                .intoImageView(ivFEUPhoto).withBitmapInfo()
+                .setCallback(new FutureCallback<ImageViewBitmapInfo>() {
+                    @Override
+                    public void onCompleted(Exception e, ImageViewBitmapInfo result) {
+                        if (e!=null){
+                            e.printStackTrace();
+                            return;
+                        }
+                        ivFEUPhoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                        ivFEUPhoto.setClipToOutline(true);
+                    }
+                });
+
+        bFEUCancle.setOnClickListener(b -> {
             AdminActivity.getInstance().onBackPressed();
         });
 
-        bFAUSave.setOnClickListener(b -> {
-            if (Validation.cantBeEmptyET(etFAUUsername)) return;
-            if (Validation.cantBeEmptyET(etFAUFirstName)) return;
-            if (Validation.cantBeEmptyET(etFAULastName)) return;
-            if (Validation.cantBeEmptyET(etFAUEmailAddress)) return;
-            if (Validation.cantBeEmptyET(etFAUPassword)) return;
-            if (Validation.cantBeEmptyET(etFAUMobileNumber)) return;
-            if (Validation.cantBeEmptyET(etFAUAddress)) return;
+        /*bFEUUpdate.setOnClickListener(b -> {
+            if (Validation.cantBeEmptyET(etFEUUsername)) return;
+            if (Validation.cantBeEmptyET(etFEUFirstName)) return;
+            if (Validation.cantBeEmptyET(etFEULastName)) return;
+            if (Validation.cantBeEmptyET(etFEUEmailAddress)) return;
+            if (Validation.cantBeEmptyET(etFEUPassword)) return;
+            if (Validation.cantBeEmptyET(etFEUMobileNumber)) return;
+            if (Validation.cantBeEmptyET(etFEUAddress)) return;
 
             MyProgressDialog.show(mCtx, "Please wait uploading photo", false);
             Uri file = Uri.fromFile(new File(LOCAL_FILE_PATH));
@@ -105,13 +126,13 @@ public class AddUserFragment extends Fragment {
                     .putFile(file)
                     .addOnSuccessListener(taskSnapshot -> {
                         RegisterUserTask.RequestDto u = new RegisterUserTask.RequestDto(
-                                etFAUUsername.getText().toString().trim(),
-                                etFAUFirstName.getText().toString().trim(),
-                                etFAULastName.getText().toString().trim(),
-                                etFAUEmailAddress.getText().toString().trim(),
-                                etFAUPassword.getText().toString().trim(),
-                                etFAUMobileNumber.getText().toString().trim(),
-                                etFAUAddress.getText().toString().trim(),
+                                etFEUUsername.getText().toString().trim(),
+                                etFEUFirstName.getText().toString().trim(),
+                                etFEULastName.getText().toString().trim(),
+                                etFEUEmailAddress.getText().toString().trim(),
+                                etFEUPassword.getText().toString().trim(),
+                                etFEUMobileNumber.getText().toString().trim(),
+                                etFEUAddress.getText().toString().trim(),
                                 "ROLE_NORMAL_USER",
                                 taskSnapshot.getDownloadUrl().toString(),
                                 LoginTask.RequestDto.AUP_APPLICATION);
@@ -195,23 +216,24 @@ public class AddUserFragment extends Fragment {
                 Utils.showToast(mCtx, "There was a problem while uploading the image. Please try again later");
                 MyProgressDialog.dismiss();
             });
-        });
+        });*/
 
         return v;
     }
 
     private void initViews(View v) {
-        etFAUUsername = (EditText) v.findViewById(R.id.etFAUUsername);
-        etFAUFirstName = (EditText) v.findViewById(R.id.etFAUFirstName);
-        etFAULastName = (EditText) v.findViewById(R.id.etFAULastName);
-        etFAUEmailAddress = (EditText) v.findViewById(R.id.etFAUEmailAddress);
-        etFAUPassword = (EditText) v.findViewById(R.id.etFAUPassword);
-        etFAUMobileNumber = (EditText) v.findViewById(R.id.etFAUMobileNumber);
-        etFAUAddress = (EditText) v.findViewById(R.id.etFAUAddress);
-        bFAUSave = (Button) v.findViewById(R.id.bFAUSave);
-        bFAUCancle = (Button) v.findViewById(R.id.bFAUCancle);
-        llFAUSelectPhoto = (RelativeLayout) v.findViewById(R.id.llFAUSelectPhoto);
-        ivFAUPhoto = (ImageView) v.findViewById(R.id.ivFAUPhoto);
+        etFEUUsername = (EditText) v.findViewById(R.id.etFEUUsername);
+        etFEUFirstName = (EditText) v.findViewById(R.id.etFEUFirstName);
+        etFEULastName = (EditText) v.findViewById(R.id.etFEULastName);
+        etFEUEmailAddress = (EditText) v.findViewById(R.id.etFEUEmailAddress);
+        etFEUPassword = (EditText) v.findViewById(R.id.etFEUPassword);
+        etFEUMobileNumber = (EditText) v.findViewById(R.id.etFEUMobileNumber);
+        etFEUAddress = (EditText) v.findViewById(R.id.etFEUAddress);
+        bFEUUpdate = (Button) v.findViewById(R.id.bFEUUpdate);
+        bFEUDelete = (Button) v.findViewById(R.id.bFEUDelete);
+        bFEUCancle = (Button) v.findViewById(R.id.bFEUCancle);
+        //llFEUSelectPhoto = (RelativeLayout) v.findViewById(R.id.llFEUSelectPhoto);
+        ivFEUPhoto = (ImageView) v.findViewById(R.id.ivFEUPhoto);
     }
 
     @Override
@@ -236,7 +258,7 @@ public class AddUserFragment extends Fragment {
 
             Ion.with(mCtx)
                     .load(LOCAL_FILE_PATH)
-                    .intoImageView(ivFAUPhoto)
+                    .intoImageView(ivFEUPhoto)
                     .withBitmapInfo()
                     .setCallback((e, result) -> {
                         if (e != null) {
@@ -244,8 +266,8 @@ public class AddUserFragment extends Fragment {
                             e.printStackTrace();
                             return;
                         }
-                        ivFAUPhoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                        ivFAUPhoto.setClipToOutline(true);
+                        ivFEUPhoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                        ivFEUPhoto.setClipToOutline(true);
                     });
         }
     }

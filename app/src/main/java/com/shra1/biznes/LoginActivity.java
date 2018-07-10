@@ -2,6 +2,7 @@ package com.shra1.biznes;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -134,7 +135,12 @@ public class LoginActivity extends AppCompatActivity {
 
                 @Override
                 public void onNetworkError(Exception e) {
-
+                    MyAlertDialog.showErrorDialog(mCtx, e, "Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            finish();
+                        }
+                    });
                 }
 
                 @Override
@@ -144,7 +150,7 @@ public class LoginActivity extends AppCompatActivity {
 
                 @Override
                 public void onNoInternetError() {
-
+                    MyAlertDialog.showNoInternetErrorDialog(mCtx);
                 }
 
                 @Override
